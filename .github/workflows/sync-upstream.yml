@@ -1,0 +1,34 @@
+# Keeps this fork's main branch in sync with the original project
+# (storytold/photocraft). Runs once a day, and can be run by hand from
+# the Actions tab ("Sync with upstream" -> "Run workflow").
+name: Sync with upstream
+
+on:
+  schedule:
+    - cron: "15 4 * * *" # every day at 04:15 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Only run in the fork, never in the original repo.
+    if: github.repository == 'senzei1337/photocraft'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync main from storytold/photocraft
+        env:
+          # If upstream changes files under .github/workflows, the default
+          # token is not allowed to push them. In that case add a personal
+          # access token with the "workflow" scope as a secret named
+          # SYNC_TOKEN and it will be used instead.
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          gh repo sync "${{ github.repository }}" \
+            --source storytold/photocraft \
+            --branch main
